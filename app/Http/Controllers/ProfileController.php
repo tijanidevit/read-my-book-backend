@@ -16,6 +16,7 @@ class ProfileController extends Controller
             ->withCount([
                 'books as favourite_books_count' => fn($query) => $query->onlyFavourite(),
             ])
+            ->with('setting')
             ->find(auth()->id());
         return $this->successResponse(data: $user);
     }
