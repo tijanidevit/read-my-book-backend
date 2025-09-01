@@ -16,6 +16,33 @@ use PhpOffice\PhpWord\Writer\HTML;
 trait FileTrait
 {
 
+    // public function uploadBookFile($file)
+    // {
+    //     $folder = 'books';
+    //     $mimeType = $file->getMimeType();
+    //     $extension = $file->getClientOriginalExtension();
+    //     $randomName = time() . "_" . Str::random(10) . "." . $extension;
+
+    //     $path = $file->storeAs("{$folder}", $randomName, 'public');
+
+    //     $path = Storage::url($path);
+
+    //     $userBook = UserBook::create([
+    //         'user_id' => auth()->id(),
+    //         'title' => pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME),
+    //         'mime_type' => $mimeType,
+    //         'path' => public_path($path),
+    //         'full_link' => url($path),
+    //         'last_read_at' => now(),
+    //     ]);
+
+    //     ExtractTextFromFileJob::dispatch($userBook);
+
+    //     return $userBook;
+    // }
+
+
+
     public function uploadBookFile($file)
     {
         $folder = 'books';
@@ -23,16 +50,26 @@ trait FileTrait
         $extension = $file->getClientOriginalExtension();
         $randomName = time() . "_" . Str::random(10) . "." . $extension;
 
-        $path = $file->storeAs("{$folder}", $randomName, 'public');
+        // Ensure the folder exists inside public
+        $destinationPath = public_path($folder);
+        if (!file_exists($destinationPath)) {
+            mkdir($destinationPath, 0777, true);
+        }
 
-        $path = Storage::url($path);
+        // Move file directly to public/books
+        $file->move($destinationPath, $randomName);
+
+        // Build paths
+        $relativePath = $folder . '/' . $randomName;  // relative to public
+        $absolutePath = public_path($relativePath);   // absolute path
+        $fullUrl = url($relativePath);                // accessible via browser
 
         $userBook = UserBook::create([
             'user_id' => auth()->id(),
             'title' => pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME),
             'mime_type' => $mimeType,
-            'path' => public_path($path),
-            'full_link' => url($path),
+            'path' => $absolutePath,
+            'full_link' => $fullUrl,
             'last_read_at' => now(),
         ]);
 
@@ -40,7 +77,6 @@ trait FileTrait
 
         return $userBook;
     }
-
 
     public function uploadMultipleFile($folder, $files)
     {
